@@ -3,201 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JKT48 HUB — Cinema & Chat</title>
+    <title>JKT48 HUB — IDN Smart Bridge</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;800&family=Syne:wght@800&display=swap" rel="stylesheet">
     <style>
-        :root { --jkt-red: #e11d48; --oshi-gold: #fbbf24; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020202; color: white; overflow-x: hidden; }
-        .jkt-font { font-family: 'Montserrat', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        :root { --accent: #ff004c; --idn-blue: #0056ff; --bg: #030303; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: white; }
+        .syne { font-family: 'Syne', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* THEATER PLAYER MODAL */
-        #video-modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.98); align-items: center; justify-content: center; }
-        .cinema-box { width: 95%; height: 85%; display: flex; flex-direction: row; background: #000; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        
-        .video-side { flex: 3; background: #000; position: relative; }
-        .chat-side { flex: 1; background: #0a0a0a; border-l: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; }
-        
-        @media (max-width: 768px) {
-            .cinema-box { flex-direction: column; height: 95%; }
-            .chat-side { flex: 1.5; }
-        }
-
-        .oshi-border { border: 2px solid var(--oshi-gold) !important; box-shadow: 0 0 25px rgba(251, 191, 36, 0.15); }
-        .heart-active { color: var(--jkt-red) !important; fill: var(--jkt-red); }
-        
-        .btn-watch { background: white; color: black; font-weight: 900; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-watch:hover { background: var(--jkt-red); color: white; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3); }
+        /* Layout Theater */
+        #theater-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: #000; flex-direction: column; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
-<body>
+<body class="pb-20">
 
-    <div id="video-modal">
-        <div class="cinema-box relative">
-            <button onclick="closePlayer()" class="absolute top-4 left-4 z-50 bg-black/60 hover:bg-rose-600 px-4 py-2 rounded-full text-[10px] font-black tracking-widest transition-all">✕ CLOSE PLAYER</button>
-            
-            <div class="video-side">
-                <iframe id="video-frame" src="" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
-            </div>
-            
-            <div class="chat-side">
-                <div class="p-4 border-b border-white/5 bg-white/5">
-                    <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">Live Interaction</h4>
-                </div>
-                <iframe id="chat-frame" src="" class="w-full h-full" frameborder="0"></iframe>
-            </div>
+    <div id="theater-overlay">
+        <div class="p-4 glass flex justify-between items-center">
+            <h2 id="active-member" class="syne text-xs uppercase italic tracking-[0.3em]">Loading Stage...</h2>
+            <button onclick="closeTheater()" class="bg-rose-600 px-6 py-2 rounded-full text-[10px] font-black uppercase">Close Stage</button>
         </div>
+        <iframe id="main-frame" allow="autoplay; fullscreen"></iframe>
     </div>
 
-    <div class="max-w-7xl mx-auto p-6 md:p-12">
-        <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
-            <div class="space-y-2">
-                <div class="flex items-center gap-3">
-                    <span class="h-1 w-12 bg-rose-600 rounded-full"></span>
-                    <h1 class="jkt-font text-4xl font-black italic tracking-tighter uppercase">JKT48<span class="text-rose-600">HUB</span></h1>
-                </div>
-                <p id="live-count" class="text-[10px] font-bold text-white/30 tracking-[0.3em] uppercase">Memuat data oshi...</p>
+    <nav class="sticky top-0 z-40 glass border-b border-white/5 px-8 py-6 mb-12">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="syne text-3xl font-extrabold italic tracking-tighter uppercase">
+                JKT<span class="text-rose-600">HUB</span>
             </div>
-            
-            <div class="flex bg-neutral-900/50 p-1 rounded-2xl border border-white/5">
-                <button onclick="setFilter('all')" id="btn-all" class="px-6 py-2.5 rounded-xl text-[10px] font-black transition-all bg-rose-600">ALL PLATFORM</button>
-                <button onclick="setFilter('showroom')" id="btn-showroom" class="px-6 py-2.5 rounded-xl text-[10px] font-black hover:text-rose-500 transition-all">SHOWROOM</button>
-                <button onclick="setFilter('idn')" id="btn-idn" class="px-6 py-2.5 rounded-xl text-[10px] font-black hover:text-rose-500 transition-all">IDN LIVE</button>
-            </div>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div class="lg:col-span-8">
-                <div id="live-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    </div>
-            </div>
-
-            <div class="lg:col-span-4 space-y-10">
-                <div class="glass p-8 rounded-[2.5rem] border-rose-600/10">
-                    <h3 class="jkt-font text-xs font-black mb-8 tracking-[0.3em] text-rose-600 uppercase italic">Jadwal Mendatang</h3>
-                    <div id="schedule-container" class="space-y-6"></div>
-                </div>
-
-                <div class="p-2">
-                    <h3 class="jkt-font text-[10px] font-black mb-6 tracking-[0.4em] text-white/20 uppercase">Riwayat Terakhir</h3>
-                    <div id="recent-container" class="grid grid-cols-4 gap-4 opacity-40 hover:opacity-100 transition-opacity"></div>
-                </div>
+            <div id="live-indicator" class="flex items-center gap-2 bg-rose-600/10 px-4 py-2 rounded-xl border border-rose-600/20">
+                <div class="w-2 h-2 bg-rose-600 rounded-full animate-ping"></div>
+                <span id="live-count" class="text-[10px] font-black uppercase text-rose-500 tracking-widest">Checking...</span>
             </div>
         </div>
-    </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-8">
+        <div class="mb-12">
+            <input type="text" id="memberSearch" placeholder="Cari member yang sedang live..." 
+                   class="w-full md:w-96 bg-white/5 border border-white/10 px-6 py-4 rounded-2xl outline-none focus:border-rose-600 transition-all text-sm"
+                   onkeyup="filterMembers()">
+        </div>
+
+        <section>
+            <div id="live-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+        </section>
+    </main>
 
     <script>
-        let allLive = [];
-        let currentFilter = 'all';
-        let oshiList = JSON.parse(localStorage.getItem('my_oshis_v5')) || [];
+        let liveData = [];
 
-        async function updateDashboard() {
+        async function getLive() {
             try {
                 const res = await fetch('https://api.crstlnz.my.id/api/now_live?group=jkt48');
-                allLive = await res.json();
-                
-                // Sort by Oshi First
-                allLive.sort((a, b) => oshiList.includes(b.name) - oshiList.includes(a.name));
-                
-                renderLive();
-                fetchMeta();
-                document.getElementById('live-count').innerText = `${allLive.length} Member sedang On Air`;
-            } catch (e) { console.log("System delay..."); }
+                liveData = await res.json();
+                renderLive(liveData);
+                document.getElementById('live-count').innerText = `${liveData.length} LIVE NOW`;
+            } catch (e) { console.error("Gagal sinkronisasi data."); }
         }
 
-        function renderLive() {
-            const container = document.getElementById('live-container');
-            const filtered = allLive.filter(m => currentFilter === 'all' || m.type === currentFilter);
+        function renderLive(list) {
+            const container = document.getElementById('live-grid');
+            if (list.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-20 text-center glass rounded-[3rem] opacity-20 uppercase tracking-[0.5em]">Belum ada member live</div>`;
+                return;
+            }
 
-            container.innerHTML = filtered.map(m => {
-                const isOshi = oshiList.includes(m.name);
+            container.innerHTML = list.map(m => {
+                // DETEKSI PLATFORM
+                const isIDN = m.type.toLowerCase().includes('idn');
+                
                 return `
-                <div class="glass rounded-[2.5rem] overflow-hidden group transition-all duration-500 ${isOshi ? 'oshi-border' : ''}">
-                    <div class="relative aspect-[4/3]">
-                        <img src="${m.img}" class="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700">
-                        <div class="absolute inset-0 bg-gradient-to-t from-[#020202] via-transparent to-transparent"></div>
-                        
-                        <button onclick="toggleOshi('${m.name}')" class="absolute top-5 right-5 z-20 p-2.5 rounded-full bg-black/50 backdrop-blur-xl border border-white/10">
-                            <svg class="w-5 h-5 ${isOshi ? 'heart-active' : 'text-white/40'}" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path></svg>
-                        </button>
-
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-rose-600">LIVE</span>
-                                <span class="text-[9px] font-bold text-white/50 uppercase">${m.type}</span>
-                            </div>
-                            <h3 class="jkt-font text-2xl font-black uppercase italic tracking-tight mb-4">${m.name}</h3>
-                            <button onclick="watchLive('${m.type}', '${m.url}', '${m.room_id}')" 
-                                    class="btn-watch w-full py-4 rounded-2xl text-[10px] tracking-[0.2em] uppercase">
-                                Masuk Theater
-                            </button>
+                <div class="glass rounded-[2.5rem] overflow-hidden group member-card">
+                    <div class="relative aspect-video">
+                        <img src="${m.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                        <div class="absolute top-6 left-6">
+                            <span class="${isIDN ? 'bg-blue-600' : 'bg-rose-600'} px-3 py-1 rounded text-[8px] font-black uppercase tracking-widest">
+                                ${m.type}
+                            </span>
                         </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="syne text-xl uppercase italic mb-1">${m.name}</h3>
+                        <p class="text-[10px] text-white/30 font-bold mb-6 tracking-widest uppercase">${m.viewers.toLocaleString()} Penonton</p>
+                        
+                        ${isIDN ? 
+                            `<a href="${m.url}" target="_blank" class="block w-full text-center bg-[#0056ff] hover:bg-blue-700 text-white py-4 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-blue-600/20 transition-all">
+                                Buka IDN App / Web ↗
+                            </a>` : 
+                            `<button onclick="openStage('${m.room_id}', '${m.name}')" class="w-full bg-white text-black py-4 rounded-2xl text-[10px] font-black uppercase hover:bg-rose-600 hover:text-white transition-all shadow-lg">
+                                Nonton di Web
+                            </button>`
+                        }
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function watchLive(type, url, roomId) {
-            if (type === 'showroom') {
-                const modal = document.getElementById('video-modal');
-                document.getElementById('video-frame').src = `https://www.showroom-live.com/streaming/embed?room_id=${roomId}`;
-                document.getElementById('chat-frame').src = `https://www.showroom-live.com/event/comment_log?room_id=${roomId}`;
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            } else {
-                window.open(url, '_blank');
-            }
+        function filterMembers() {
+            const query = document.getElementById('memberSearch').value.toLowerCase();
+            const filtered = liveData.filter(m => m.name.toLowerCase().includes(query));
+            renderLive(filtered);
         }
 
-        function closePlayer() {
-            document.getElementById('video-modal').style.display = 'none';
-            document.getElementById('video-frame').src = '';
-            document.getElementById('chat-frame').src = '';
+        function openStage(roomId, name) {
+            const overlay = document.getElementById('theater-overlay');
+            const frame = document.getElementById('main-frame');
+            // Hanya untuk Showroom
+            frame.src = `https://www.showroom-live.com/streaming/embed?room_id=${roomId}&stop_on_unfocus=0&autoplay=1&muted=1`;
+            document.getElementById('active-member').innerText = `Watching: ${name}`;
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTheater() {
+            document.getElementById('theater-overlay').style.display = 'none';
+            document.getElementById('main-frame').src = '';
             document.body.style.overflow = 'auto';
         }
 
-        function toggleOshi(name) {
-            oshiList = oshiList.includes(name) ? oshiList.filter(o => o !== name) : [...oshiList, name];
-            localStorage.setItem('my_oshis_v5', JSON.stringify(oshiList));
-            updateDashboard();
-        }
-
-        async function fetchMeta() {
-            try {
-                const [sRes, recData] = await Promise.all([
-                    fetch('https://api.crstlnz.my.id/api/schedule'),
-                    JSON.parse(localStorage.getItem('jkt_rec_v5')) || []
-                ]);
-                const sData = await sRes.json();
-
-                document.getElementById('schedule-container').innerHTML = sData.slice(0, 4).map(s => `
-                    <div class="group border-l-2 border-white/5 pl-5 hover:border-rose-600 transition-all">
-                        <p class="text-[9px] font-black text-rose-600 mb-1 tracking-widest uppercase">${s.date}</p>
-                        <h4 class="text-xs font-bold leading-tight group-hover:text-rose-500 transition-colors">${s.title}</h4>
-                    </div>
-                `).join('');
-
-                // Update Recent list with live members
-                let updatedRec = [...allLive.map(m => ({name: m.name, img: m.img})), ...recData];
-                const uniqueRec = Array.from(new Set(updatedRec.map(a => a.name))).map(name => updatedRec.find(a => a.name === name)).slice(0, 8);
-                localStorage.setItem('jkt_rec_v5', JSON.stringify(uniqueRec));
-                
-                document.getElementById('recent-container').innerHTML = uniqueRec.map(r => `
-                    <img src="${r.img}" class="w-full aspect-square object-cover rounded-xl border border-white/10" title="${r.name}">
-                `).join('');
-            } catch (e) {}
-        }
-
-        function setFilter(f) {
-            currentFilter = f;
-            document.querySelectorAll('button[id^="btn-"]').forEach(b => b.classList.remove('bg-rose-600'));
-            document.getElementById('btn-' + f).classList.add('bg-rose-600');
-            renderLive();
-        }
-
-        updateDashboard();
-        setInterval(updateDashboard, 30000);
+        getLive();
+        setInterval(getLive, 30000); // Update tiap 30 detik
     </script>
 </body>
-</html>
+    </html>
