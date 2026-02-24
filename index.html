@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JKT48 HUB — Cinema & Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root { --jkt-red: #e11d48; --oshi-gold: #fbbf24; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020202; color: white; overflow-x: hidden; }
+        .jkt-font { font-family: 'Montserrat', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* THEATER PLAYER MODAL */
+        #video-modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.98); align-items: center; justify-content: center; }
+        .cinema-box { width: 95%; height: 85%; display: flex; flex-direction: row; background: #000; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .video-side { flex: 3; background: #000; position: relative; }
+        .chat-side { flex: 1; background: #0a0a0a; border-l: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; }
+        
+        @media (max-width: 768px) {
+            .cinema-box { flex-direction: column; height: 95%; }
+            .chat-side { flex: 1.5; }
+        }
+
+        .oshi-border { border: 2px solid var(--oshi-gold) !important; box-shadow: 0 0 25px rgba(251, 191, 36, 0.15); }
+        .heart-active { color: var(--jkt-red) !important; fill: var(--jkt-red); }
+        
+        .btn-watch { background: white; color: black; font-weight: 900; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-watch:hover { background: var(--jkt-red); color: white; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3); }
+    </style>
+</head>
+<body>
+
+    <div id="video-modal">
+        <div class="cinema-box relative">
+            <button onclick="closePlayer()" class="absolute top-4 left-4 z-50 bg-black/60 hover:bg-rose-600 px-4 py-2 rounded-full text-[10px] font-black tracking-widest transition-all">✕ CLOSE PLAYER</button>
+            
+            <div class="video-side">
+                <iframe id="video-frame" src="" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+            </div>
+            
+            <div class="chat-side">
+                <div class="p-4 border-b border-white/5 bg-white/5">
+                    <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">Live Interaction</h4>
+                </div>
+                <iframe id="chat-frame" src="" class="w-full h-full" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6 md:p-12">
+        <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
+            <div class="space-y-2">
+                <div class="flex items-center gap-3">
+                    <span class="h-1 w-12 bg-rose-600 rounded-full"></span>
+                    <h1 class="jkt-font text-4xl font-black italic tracking-tighter uppercase">JKT48<span class="text-rose-600">HUB</span></h1>
+                </div>
+                <p id="live-count" class="text-[10px] font-bold text-white/30 tracking-[0.3em] uppercase">Memuat data oshi...</p>
+            </div>
+            
+            <div class="flex bg-neutral-900/50 p-1 rounded-2xl border border-white/5">
+                <button onclick="setFilter('all')" id="btn-all" class="px-6 py-2.5 rounded-xl text-[10px] font-black transition-all bg-rose-600">ALL PLATFORM</button>
+                <button onclick="setFilter('showroom')" id="btn-showroom" class="px-6 py-2.5 rounded-xl text-[10px] font-black hover:text-rose-500 transition-all">SHOWROOM</button>
+                <button onclick="setFilter('idn')" id="btn-idn" class="px-6 py-2.5 rounded-xl text-[10px] font-black hover:text-rose-500 transition-all">IDN LIVE</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div class="lg:col-span-8">
+                <div id="live-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    </div>
+            </div>
+
+            <div class="lg:col-span-4 space-y-10">
+                <div class="glass p-8 rounded-[2.5rem] border-rose-600/10">
+                    <h3 class="jkt-font text-xs font-black mb-8 tracking-[0.3em] text-rose-600 uppercase italic">Jadwal Mendatang</h3>
+                    <div id="schedule-container" class="space-y-6"></div>
+                </div>
+
+                <div class="p-2">
+                    <h3 class="jkt-font text-[10px] font-black mb-6 tracking-[0.4em] text-white/20 uppercase">Riwayat Terakhir</h3>
+                    <div id="recent-container" class="grid grid-cols-4 gap-4 opacity-40 hover:opacity-100 transition-opacity"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allLive = [];
+        let currentFilter = 'all';
+        let oshiList = JSON.parse(localStorage.getItem('my_oshis_v5')) || [];
+
+        async function updateDashboard() {
+            try {
+                const res = await fetch('https://api.crstlnz.my.id/api/now_live?group=jkt48');
+                allLive = await res.json();
+                
+                // Sort by Oshi First
+                allLive.sort((a, b) => oshiList.includes(b.name) - oshiList.includes(a.name));
+                
+                renderLive();
+                fetchMeta();
+                document.getElementById('live-count').innerText = `${allLive.length} Member sedang On Air`;
+            } catch (e) { console.log("System delay..."); }
+        }
+
+        function renderLive() {
+            const container = document.getElementById('live-container');
+            const filtered = allLive.filter(m => currentFilter === 'all' || m.type === currentFilter);
+
+            container.innerHTML = filtered.map(m => {
+                const isOshi = oshiList.includes(m.name);
+                return `
+                <div class="glass rounded-[2.5rem] overflow-hidden group transition-all duration-500 ${isOshi ? 'oshi-border' : ''}">
+                    <div class="relative aspect-[4/3]">
+                        <img src="${m.img}" class="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#020202] via-transparent to-transparent"></div>
+                        
+                        <button onclick="toggleOshi('${m.name}')" class="absolute top-5 right-5 z-20 p-2.5 rounded-full bg-black/50 backdrop-blur-xl border border-white/10">
+                            <svg class="w-5 h-5 ${isOshi ? 'heart-active' : 'text-white/40'}" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path></svg>
+                        </button>
+
+                        <div class="absolute bottom-6 left-6 right-6">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-rose-600">LIVE</span>
+                                <span class="text-[9px] font-bold text-white/50 uppercase">${m.type}</span>
+                            </div>
+                            <h3 class="jkt-font text-2xl font-black uppercase italic tracking-tight mb-4">${m.name}</h3>
+                            <button onclick="watchLive('${m.type}', '${m.url}', '${m.room_id}')" 
+                                    class="btn-watch w-full py-4 rounded-2xl text-[10px] tracking-[0.2em] uppercase">
+                                Masuk Theater
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function watchLive(type, url, roomId) {
+            if (type === 'showroom') {
+                const modal = document.getElementById('video-modal');
+                document.getElementById('video-frame').src = `https://www.showroom-live.com/streaming/embed?room_id=${roomId}`;
+                document.getElementById('chat-frame').src = `https://www.showroom-live.com/event/comment_log?room_id=${roomId}`;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        function closePlayer() {
+            document.getElementById('video-modal').style.display = 'none';
+            document.getElementById('video-frame').src = '';
+            document.getElementById('chat-frame').src = '';
+            document.body.style.overflow = 'auto';
+        }
+
+        function toggleOshi(name) {
+            oshiList = oshiList.includes(name) ? oshiList.filter(o => o !== name) : [...oshiList, name];
+            localStorage.setItem('my_oshis_v5', JSON.stringify(oshiList));
+            updateDashboard();
+        }
+
+        async function fetchMeta() {
+            try {
+                const [sRes, recData] = await Promise.all([
+                    fetch('https://api.crstlnz.my.id/api/schedule'),
+                    JSON.parse(localStorage.getItem('jkt_rec_v5')) || []
+                ]);
+                const sData = await sRes.json();
+
+                document.getElementById('schedule-container').innerHTML = sData.slice(0, 4).map(s => `
+                    <div class="group border-l-2 border-white/5 pl-5 hover:border-rose-600 transition-all">
+                        <p class="text-[9px] font-black text-rose-600 mb-1 tracking-widest uppercase">${s.date}</p>
+                        <h4 class="text-xs font-bold leading-tight group-hover:text-rose-500 transition-colors">${s.title}</h4>
+                    </div>
+                `).join('');
+
+                // Update Recent list with live members
+                let updatedRec = [...allLive.map(m => ({name: m.name, img: m.img})), ...recData];
+                const uniqueRec = Array.from(new Set(updatedRec.map(a => a.name))).map(name => updatedRec.find(a => a.name === name)).slice(0, 8);
+                localStorage.setItem('jkt_rec_v5', JSON.stringify(uniqueRec));
+                
+                document.getElementById('recent-container').innerHTML = uniqueRec.map(r => `
+                    <img src="${r.img}" class="w-full aspect-square object-cover rounded-xl border border-white/10" title="${r.name}">
+                `).join('');
+            } catch (e) {}
+        }
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('button[id^="btn-"]').forEach(b => b.classList.remove('bg-rose-600'));
+            document.getElementById('btn-' + f).classList.add('bg-rose-600');
+            renderLive();
+        }
+
+        updateDashboard();
+        setInterval(updateDashboard, 30000);
+    </script>
+</body>
+</html>
