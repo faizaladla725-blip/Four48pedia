@@ -3,130 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JKT48 HUB — IDN Smart Bridge</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;800&family=Syne:wght@800&display=swap" rel="stylesheet">
+    <title>FOUR48 | STREAMING</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #ff004c; --idn-blue: #0056ff; --bg: #030303; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: white; }
-        .syne { font-family: 'Syne', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        :root { --primary: #e84118; --dark: #0a0a0a; --glass: rgba(255, 255, 255, 0.05); }
+        * { box-sizing: border-box; outline: none; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--dark); color: #fff; margin: 0; }
         
-        /* Layout Theater */
-        #theater-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: #000; flex-direction: column; }
-        iframe { width: 100%; height: 100%; border: none; }
+        header { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #000; border-bottom: 1px solid #222; sticky: top; }
+        .brand { font-weight: 800; font-size: 16px; }
+        .brand span { color: var(--primary); }
+        #memberStatus { font-size: 10px; font-weight: 800; border: 1px solid var(--primary); padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+
+        .container { max-width: 500px; margin: auto; padding: 0; }
+        
+        /* TO THE POINT: FEATURED SECTION */
+        #featured { width: 100%; background: #000; position: relative; border-bottom: 2px solid var(--primary); }
+        .v-player { position: relative; padding-bottom: 56.25%; background: #111; }
+        iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+        
+        .v-lock { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; }
+        .btn-main { background: #fff; color: #000; border: none; padding: 12px 25px; border-radius: 8px; font-weight: 800; cursor: pointer; margin-bottom: 10px; width: 80%; }
+        .btn-sub { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 8px; font-size: 11px; cursor: pointer; }
+
+        .featured-info { padding: 15px; background: linear-gradient(to bottom, #111, #000); }
+        .status-tag { display: inline-block; font-size: 9px; font-weight: 800; background: var(--primary); padding: 2px 8px; border-radius: 4px; margin-bottom: 5px; }
+        .v-title { font-size: 18px; font-weight: 800; margin: 0; }
+        .v-lineup { font-size: 11px; color: #666; margin-top: 5px; }
+
+        .backup-bar { padding: 0 15px 15px; }
+        .btn-backup { background: #222; color: #fbc531; border: 1px solid #fbc531; padding: 10px; border-radius: 8px; font-size: 11px; width: 100%; font-weight: 800; cursor: pointer; }
+
+        /* LIST SECTION BELOW */
+        .history-title { padding: 20px 15px 10px; font-size: 12px; font-weight: 800; color: #444; border-top: 5px solid #111; }
+        .history-item { display: flex; gap: 12px; padding: 15px; border-bottom: 1px solid #111; align-items: center; cursor: pointer; }
+        .history-item:active { background: #111; }
+        .history-thumb { width: 80px; height: 50px; background: #222; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; position: relative; overflow: hidden; }
+        .history-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .history-meta { flex: 1; }
+        .history-name { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
+        .history-date { font-size: 10px; color: #555; font-weight: 800; }
+
+        /* MODALS & FAB */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: #fff; color: #000; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; }
+        .fab { position: fixed; bottom: 20px; right: 20px; background: var(--primary); width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; opacity: 0.3; }
+        .fab:hover { opacity: 1; }
     </style>
 </head>
-<body class="pb-20">
+<body>
 
-    <div id="theater-overlay">
-        <div class="p-4 glass flex justify-between items-center">
-            <h2 id="active-member" class="syne text-xs uppercase italic tracking-[0.3em]">Loading Stage...</h2>
-            <button onclick="closeTheater()" class="bg-rose-600 px-6 py-2 rounded-full text-[10px] font-black uppercase">Close Stage</button>
+<header>
+    <div class="brand">FOUR<span>48</span></div>
+    <div id="memberStatus" onclick="loginMember()">MEMBER LOGIN</div>
+</header>
+
+<div class="container">
+    <div id="featured">
+        <div id="featuredContent">
+            <p style="text-align:center; padding: 50px; color:#444;">Memuat Video Terbaru...</p>
         </div>
-        <iframe id="main-frame" allow="autoplay; fullscreen"></iframe>
     </div>
 
-    <nav class="sticky top-0 z-40 glass border-b border-white/5 px-8 py-6 mb-12">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="syne text-3xl font-extrabold italic tracking-tighter uppercase">
-                JKT<span class="text-rose-600">HUB</span>
-            </div>
-            <div id="live-indicator" class="flex items-center gap-2 bg-rose-600/10 px-4 py-2 rounded-xl border border-rose-600/20">
-                <div class="w-2 h-2 bg-rose-600 rounded-full animate-ping"></div>
-                <span id="live-count" class="text-[10px] font-black uppercase text-rose-500 tracking-widest">Checking...</span>
-            </div>
-        </div>
-    </nav>
+    <div class="history-title">RIWAYAT SHOW SEBELUMNYA</div>
+    <div id="historyList"></div>
+</div>
 
-    <main class="max-w-7xl mx-auto px-8">
-        <div class="mb-12">
-            <input type="text" id="memberSearch" placeholder="Cari member yang sedang live..." 
-                   class="w-full md:w-96 bg-white/5 border border-white/10 px-6 py-4 rounded-2xl outline-none focus:border-rose-600 transition-all text-sm"
-                   onkeyup="filterMembers()">
-        </div>
+<div id="payModal" class="modal">
+    <div class="modal-box text-center" style="text-align:center;">
+        <h3 id="payTitle" style="margin:0;">Beli Token</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=F48-REPLAY" style="width:200px; margin:15px 0; border-radius:10px;">
+        <div style="font-size:20px; font-weight:800; color:var(--primary);">Rp 15.000</div>
+        <a id="waPayLink" href="#" target="_blank" style="background:#25d366; color:white; padding:12px; border-radius:10px; text-decoration:none; display:block; font-weight:800; margin-top:10px;">KONFIRMASI WHATSAPP</a>
+        <button onclick="closeModal('payModal')" style="background:none; border:none; margin-top:15px; color:#aaa; cursor:pointer;">Batal</button>
+    </div>
+</div>
 
-        <section>
-            <div id="live-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div id="adminModal" class="modal">
+    <div class="modal-box">
+        <h3>Post Video Baru</h3>
+        <select id="addType"><option value="LIVE">LIVE STREAMING</option><option value="REPLAY">ARCHIVE REPLAY</option></select>
+        <input type="date" id="addDate">
+        <input type="text" id="addTitle" placeholder="Judul Show">
+        <input type="text" id="addUrl" placeholder="Link Utama (Arcom/Realtime/YT)">
+        <input type="text" id="addBackup" placeholder="Link Backup">
+        <input type="text" id="addLineup" placeholder="Lineup">
+        <button onclick="publish()" id="btnPub" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:800; margin-top:10px;">PUBLISH</button>
+        <button onclick="closeModal('adminModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#aaa; cursor:pointer;">Tutup</button>
+    </div>
+</div>
+
+<div class="fab" onclick="checkAdmin()">⚙️</div>
+
+<script>
+    const API = 'https://sheetdb.io/api/v1/abpnzkw0kucog';
+    const WA_NUMBER = "628123456789"; 
+    let db = [];
+
+    async function load() {
+        try {
+            const res = await fetch(API);
+            db = await res.json();
+            render();
+            updateHeader();
+        } catch (e) { console.error("API Error"); }
+    }
+
+    function isVip() { return localStorage.getItem('f48_expiry') > new Date().getTime(); }
+
+    function render() {
+        const featCont = document.getElementById('featuredContent');
+        const listCont = document.getElementById('historyList');
+        const data = db.filter(v => v.token !== "FEEDBACK").reverse(); // Terbaru di atas
+        
+        if (data.length === 0) return;
+
+        // VIDEO UTAMA (Data ke-0)
+        const top = data[0];
+        const unlocked = isVip() || localStorage.getItem('unlocked_'+top.id);
+        const hasBackup = top.backup && top.backup.length > 5;
+        const isLive = top.id.includes('LIVE');
+
+        featCont.innerHTML = `
+            <div class="v-player">
+                ${!unlocked ? `
+                    <div class="v-lock">
+                        <span class="status-tag">PREMIUM ACCESS</span>
+                        <button class="btn-main" onclick="openPay('${top.title}')">BELI AKSES VIDEO INI</button>
+                        <button class="btn-sub" onclick="inputToken('${top.token}', '${top.id}')">MASUKKAN TOKEN</button>
+                    </div>
+                ` : `<iframe id="mainPlayer" src="${processUrl(top.url)}" allowfullscreen></iframe>`}
+            </div>
+            <div class="featured-info">
+                <span class="status-tag" style="background:${isLive?'red':'#444'}">${isLive?'🔴 LIVE':'REPLAY'}</span>
+                <h1 class="v-title">${top.title}</h1>
+                <div class="v-lineup">${top.date} • ${top.lineup}</div>
+            </div>
+            ${unlocked && hasBackup ? `
+                <div class="backup-bar">
+                    <button class="btn-backup" onclick="switchSrv('${top.url}', '${top.backup}')">🔄 SERVER MATI? KLIK GANTI CADANGAN</button>
                 </div>
-        </section>
-    </main>
+            ` : ''}
+        `;
 
-    <script>
-        let liveData = [];
+        // LIST SEJARAH (Data sisanya)
+        listCont.innerHTML = data.slice(1).map(v => `
+            <div class="history-item" onclick="setFeatured('${v.id}')">
+                <div class="history-thumb">▶️</div>
+                <div class="history-meta">
+                    <span class="history-name">${v.title}</span>
+                    <span class="history-date">${v.date}</span>
+                </div>
+            </div>
+        `).join('');
+    }
 
-        async function getLive() {
-            try {
-                const res = await fetch('https://api.crstlnz.my.id/api/now_live?group=jkt48');
-                liveData = await res.json();
-                renderLive(liveData);
-                document.getElementById('live-count').innerText = `${liveData.length} LIVE NOW`;
-            } catch (e) { console.error("Gagal sinkronisasi data."); }
-        }
+    // Fungsi to the point: Ganti video utama saat list diklik
+    function setFeatured(id) {
+        const item = db.find(x => x.id === id);
+        const index = db.indexOf(item);
+        db.splice(index, 1);
+        db.push(item); // Pindah ke paling akhir agar pas di-reverse jadi paling atas
+        render();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
 
-        function renderLive(list) {
-            const container = document.getElementById('live-grid');
-            if (list.length === 0) {
-                container.innerHTML = `<div class="col-span-full py-20 text-center glass rounded-[3rem] opacity-20 uppercase tracking-[0.5em]">Belum ada member live</div>`;
-                return;
-            }
+    function processUrl(u) {
+        if(u.includes('youtu')) return `https://www.youtube.com/embed/${u.includes('v=')?u.split('v=')[1].split('&')[0]:u.split('/').pop()}`;
+        if(u.includes('realtime48')) return u.replace('/watch/', '/embed/');
+        if(u.includes('drive.google')) return u.replace('/view', '/preview');
+        return u;
+    }
 
-            container.innerHTML = list.map(m => {
-                // DETEKSI PLATFORM
-                const isIDN = m.type.toLowerCase().includes('idn');
-                
-                return `
-                <div class="glass rounded-[2.5rem] overflow-hidden group member-card">
-                    <div class="relative aspect-video">
-                        <img src="${m.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                        <div class="absolute top-6 left-6">
-                            <span class="${isIDN ? 'bg-blue-600' : 'bg-rose-600'} px-3 py-1 rounded text-[8px] font-black uppercase tracking-widest">
-                                ${m.type}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <h3 class="syne text-xl uppercase italic mb-1">${m.name}</h3>
-                        <p class="text-[10px] text-white/30 font-bold mb-6 tracking-widest uppercase">${m.viewers.toLocaleString()} Penonton</p>
-                        
-                        ${isIDN ? 
-                            `<a href="${m.url}" target="_blank" class="block w-full text-center bg-[#0056ff] hover:bg-blue-700 text-white py-4 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-blue-600/20 transition-all">
-                                Buka IDN App / Web ↗
-                            </a>` : 
-                            `<button onclick="openStage('${m.room_id}', '${m.name}')" class="w-full bg-white text-black py-4 rounded-2xl text-[10px] font-black uppercase hover:bg-rose-600 hover:text-white transition-all shadow-lg">
-                                Nonton di Web
-                            </button>`
-                        }
-                    </div>
-                </div>`;
-            }).join('');
-        }
+    let isBackup = false;
+    function switchSrv(m, b) {
+        const p = document.getElementById('mainPlayer');
+        isBackup = !isBackup;
+        p.src = processUrl(isBackup ? b : m);
+        alert(isBackup ? "Pindah ke Server Backup" : "Kembali ke Server Utama");
+    }
 
-        function filterMembers() {
-            const query = document.getElementById('memberSearch').value.toLowerCase();
-            const filtered = liveData.filter(m => m.name.toLowerCase().includes(query));
-            renderLive(filtered);
-        }
+    async function publish() {
+        const t = document.getElementById('addType').value;
+        const tok = "F48-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const data = { data: [{
+            id: (t === 'LIVE' ? "LIVE_" : "vid_") + Date.now(),
+            date: document.getElementById('addDate').value,
+            title: document.getElementById('addTitle').value,
+            url: document.getElementById('addUrl').value,
+            backup: document.getElementById('addBackup').value,
+            lineup: document.getElementById('addLineup').value,
+            token: tok
+        }]};
+        await fetch(API, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+        alert("BERHASIL! Token: " + tok);
+        location.reload();
+    }
 
-        function openStage(roomId, name) {
-            const overlay = document.getElementById('theater-overlay');
-            const frame = document.getElementById('main-frame');
-            // Hanya untuk Showroom
-            frame.src = `https://www.showroom-live.com/streaming/embed?room_id=${roomId}&stop_on_unfocus=0&autoplay=1&muted=1`;
-            document.getElementById('active-member').innerText = `Watching: ${name}`;
-            overlay.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
+    function openPay(t) {
+        document.getElementById('payTitle').innerText = t;
+        document.getElementById('payModal').style.display = 'flex';
+        document.getElementById('waPayLink').href = `https://wa.me/${WA_NUMBER}?text=Beli Token: ${t}`;
+    }
 
-        function closeTheater() {
-            document.getElementById('theater-overlay').style.display = 'none';
-            document.getElementById('main-frame').src = '';
-            document.body.style.overflow = 'auto';
-        }
+    function inputToken(c, id) {
+        if(prompt("Masukkan Token:").toUpperCase() === c) { localStorage.setItem('unlocked_'+id, 'true'); render(); }
+    }
 
-        getLive();
-        setInterval(getLive, 30000); // Update tiap 30 detik
-    </script>
+    function checkAdmin() { if(prompt("Pass:") === "jkt48oke") document.getElementById('adminModal').style.display = 'flex'; }
+    function loginMember() { if(prompt("VIP Pass:") === "vip30hari") { localStorage.setItem('f48_expiry', new Date().getTime()+(30*24*60*60*1000)); location.reload(); } }
+    function updateHeader() { if(isVip()) document.getElementById('memberStatus').innerText = "VIP MEMBER ⭐"; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
+    window.onload = load;
+</script>
 </body>
-    </html>
+</html>
